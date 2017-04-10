@@ -76,15 +76,16 @@ class SQLParserUtils
     /**
      * For a positional query this method can rewrite the sql statement with regard to array parameters.
      *
-     * @param string $query  The SQL query to execute.
-     * @param array  $params The parameters to bind to the query.
-     * @param array  $types  The types the previous parameters are in.
+     * @param string   $query               The SQL query to execute.
+     * @param array    $params              The parameters to bind to the query.
+     * @param array    $types               The types the previous parameters are in.
+     * @param int|null $maxInClauseElements Maximum allowed elements in IN clause limit. Null if unlimited
      *
      * @return array
      *
      * @throws SQLParserUtilsException
      */
-    static public function expandListParameters($query, $params, $types)
+    static public function expandListParameters($query, $params, $types, $maxInClauseElements = null)
     {
         $isPositional   = is_int(key($params));
         $arrayPositions = array();
@@ -144,8 +145,12 @@ class SQLParserUtils
                     array_slice($types, $needle + 1)
                 );
 
-                $expandStr  = $count ? implode(", ", array_fill(0, $count, "?")) : 'NULL';
-                $query      = substr($query, 0, $needlePos) . $expandStr . substr($query, $needlePos + 1);
+                if (null === $maxInClauseElements || $count <= $maxInClauseElements) {
+                    $expandStr  = $count ? implode(", ", array_fill(0, $count, "?")) : 'NULL';
+                    $query      = substr($query, 0, $needlePos) . $expandStr . substr($query, $needlePos + 1);
+                } else {
+                    list($query, $expandStr) = self::splitInClause($query, $queryOffset, $needlePos, $count, $maxInClauseElements);
+                }
 
                 $paramOffset += ($count - 1); // Grows larger by number of parameters minus the replaced needle.
                 $queryOffset += (strlen($expandStr) - 1);
@@ -186,6 +191,46 @@ class SQLParserUtils
         }
 
         return array($query, $paramsOrd, $typesOrd);
+    }
+
+    /**
+     * @todo proper doc
+     *
+     * @param $query
+     * @param $queryOffset
+     * @param $needlePos
+     * @param $count
+     * @param $maxInClauseElements
+     * @return array
+     */
+    static private function splitInClause($query, $queryOffset, $needlePos, $count, $maxInClauseElements)
+    {
+        $searchSubject = substr($query, $queryOffset, $needlePos - $queryOffset);
+        preg_match_all('/\s+\S+\s+IN \(/i', $searchSubject, $matches);
+        $match = array_pop($matches[0]);
+
+        $columnSpecification = trim(substr($match, 0, strpos(strtolower($match), ' in')));
+
+        $partsNumber = ceil($count / $maxInClauseElements);
+        $remainingItemsCount = $count % $maxInClauseElements;
+
+        $singleFullBlock = $columnSpecification . ' IN (' . implode(', ', array_fill(0, $maxInClauseElements, "?")) . ')';
+        $expandStr  = ' (';
+
+        if ($remainingItemsCount > 0) {
+            $expandStr .= str_repeat($singleFullBlock . ' OR ', $partsNumber - 1);
+
+            $remainingPart = $columnSpecification . ' IN (' . implode(', ', array_fill(0, $remainingItemsCount, "?")) . ')';
+            $expandStr .= $remainingPart;
+        } else {
+            $expandStr .= str_repeat($singleFullBlock . ' OR ' , $partsNumber);
+            $expandStr = rtrim($expandStr, ' OR ');
+        }
+
+        return array(
+            substr($query, 0, strpos($query, $match)) . $expandStr . substr($query, strpos($query, $match) + strlen($match) + 1),
+            $expandStr,
+        );
     }
 
     /**
