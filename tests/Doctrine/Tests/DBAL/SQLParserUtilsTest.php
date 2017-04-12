@@ -504,18 +504,25 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            /*
-                        // Positional: Two lists
-                        array(
-                            "SELECT * FROM Foo WHERE foo IN (?, ?)",
-                            array(array(1, 2, 3), array(4, 5)),
-                            array(Connection::PARAM_INT_ARRAY, Connection::PARAM_INT_ARRAY),
-                            'SELECT * FROM Foo WHERE (foo IN (?, ?) OR foo IN (?, ?) OR foo IN (?))',
-                            array(1, 2, 3, 4, 5),
-                            array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
-                            2
-                        ),
-            */
+            // Positional: Two lists
+            array(
+                "SELECT * FROM Foo WHERE foo IN (?, ?)",
+                array(array(1, 2, 3), array(4, 5)),
+                array(Connection::PARAM_INT_ARRAY, Connection::PARAM_INT_ARRAY),
+                'SELECT * FROM Foo WHERE (foo IN (?, ?) OR foo IN (?, ?) OR foo IN (?))',
+                array(1, 2, 3, 4, 5),
+                array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
+                2
+            ),
+            array(
+                "SELECT * FROM Foo WHERE foo IN (?, ?, ?) AND bar = ?",
+                array(array(1, 2, 3), array(4), array(5), 6),
+                array(Connection::PARAM_INT_ARRAY, Connection::PARAM_INT_ARRAY, Connection::PARAM_INT_ARRAY, \PDO::PARAM_INT),
+                'SELECT * FROM Foo WHERE (foo IN (?, ?) OR foo IN (?, ?) OR foo IN (?)) AND bar = ?',
+                array(1, 2, 3, 4, 5, 6),
+                array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
+                2
+            ),
             // Positional: Empty "integer" array DDC-1978
             array(
                 "SELECT * FROM Foo WHERE foo IN (?)",

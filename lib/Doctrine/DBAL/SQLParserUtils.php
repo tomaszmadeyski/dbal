@@ -131,6 +131,10 @@ class SQLParserUtils
                 $needlePos += $queryOffset;
                 $count      = count($params[$needle]);
 
+                //we wil need unmodified version in case when in clause placeholders merge is required
+                $paramsOriginal = $params;
+                $typesOriginal  = $types;
+
                 $params = array_merge(
                     array_slice($params, 0, $needle),
                     $params[$needle],
@@ -149,6 +153,50 @@ class SQLParserUtils
                     $expandStr  = $count ? implode(", ", array_fill(0, $count, "?")) : 'NULL';
                     $query      = substr($query, 0, $needlePos) . $expandStr . substr($query, $needlePos + 1);
                 } else {
+                    //if multiple placeholders exists in the same IN clause we need to merge them into one
+                    $inClauseStart = substr($query, $needlePos);
+                    $placeholders = substr($inClauseStart, 0, strpos($inClauseStart, ')'));
+                    $placeholdersCount = substr_count($placeholders, '?');
+
+                    if ($placeholdersCount > 1) {
+                        $params = array_merge(
+                            array_slice($paramsOriginal, 0, $needle),
+                            $paramsOriginal[$needle]
+                        );
+
+                        $types = array_merge(
+                            array_slice($typesOriginal, 0, $needle),
+                            array_fill(0, $count, $typesOriginal[$needle] - Connection::ARRAY_PARAM_OFFSET)
+                        );
+
+                        //no we take params and types assigned to next placeholder in current IN clause
+                        for ($i = $needle + 1; $i < $placeholdersCount; $i++) {
+                            unset($arrayPositions[$i]);
+                            $count += count($paramsOriginal[$i]);
+                            $params = array_merge(
+                                $params,
+                                $paramsOriginal[$i]
+                            );
+
+                            $types = array_merge(
+                                $types,
+                                array_fill(0, count($paramsOriginal[$i]), $typesOriginal[$i] - Connection::ARRAY_PARAM_OFFSET)
+                            );
+
+                            if ($i == $placeholdersCount - 1) {
+                                $params = array_merge(
+                                    $params,
+                                    array_slice($paramsOriginal, $i + 1)
+                                );
+
+                                $types = array_merge(
+                                    $types,
+                                    array_slice($typesOriginal, $i + 1)
+                                );
+                            }
+                        }
+                    }
+
                     list($query, $expandStr) = self::splitInClause($query, $queryOffset, $needlePos, $count, $maxInClauseElements);
                 }
 
@@ -227,8 +275,11 @@ class SQLParserUtils
             $expandStr = rtrim($expandStr, ' OR ');
         }
 
+        //we need to figure out query part which begins at the end of current IN clause
+        $remainingQuery = substr($query, strpos($query, $match) + strpos(substr($query, strpos($query, $match)), ')'));
+
         return array(
-            substr($query, 0, strpos($query, $match)) . $expandStr . substr($query, strpos($query, $match) + strlen($match) + 1),
+            substr($query, 0, strpos($query, $match)) . $expandStr . $remainingQuery,
             $expandStr,
         );
     }
