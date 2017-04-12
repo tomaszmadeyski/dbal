@@ -152,6 +152,7 @@ class SQLParserUtils
                 if (null === $maxInClauseElements || $count <= $maxInClauseElements) {
                     $expandStr  = $count ? implode(", ", array_fill(0, $count, "?")) : 'NULL';
                     $query      = substr($query, 0, $needlePos) . $expandStr . substr($query, $needlePos + 1);
+                    $queryOffset += (strlen($expandStr) - 1);
                 } else {
                     //if multiple placeholders exists in the same IN clause we need to merge them into one
                     $inClauseStart = substr($query, $needlePos);
@@ -197,11 +198,12 @@ class SQLParserUtils
                         }
                     }
 
-                    list($query, $expandStr) = self::splitInClause($query, $queryOffset, $needlePos, $count, $maxInClauseElements);
+                    list($query, $queryLenghtGrowth) = self::splitInClause($query, $queryOffset, $needlePos, $count, $maxInClauseElements);
+                    $queryOffset += $queryLenghtGrowth;
                 }
 
                 $paramOffset += ($count - 1); // Grows larger by number of parameters minus the replaced needle.
-                $queryOffset += (strlen($expandStr) - 1);
+
             }
 
             return array($query, $params, $types);
@@ -278,9 +280,11 @@ class SQLParserUtils
         //we need to figure out query part which begins at the end of current IN clause
         $remainingQuery = substr($query, strpos($query, $match) + strpos(substr($query, strpos($query, $match)), ')'));
 
+        $newQuery = substr($query, 0, strpos($query, $match)) . $expandStr . $remainingQuery;
+
         return array(
-            substr($query, 0, strpos($query, $match)) . $expandStr . $remainingQuery,
-            $expandStr,
+            $newQuery,
+            strlen($newQuery) - strlen($query),
         );
     }
 

@@ -553,7 +553,6 @@ SQLDATA
                 array(1 => \PDO::PARAM_STR, 2 => \PDO::PARAM_STR),
                 2
             ),
-            /*
             // Positional: explicit keys for array params and array types
             array(
                 "SELECT * FROM Foo WHERE foo IN (?) AND bar IN (?) AND baz = ?",
@@ -564,8 +563,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_STR, \PDO::PARAM_STR, \PDO::PARAM_BOOL),
                 2
             ),
-            */
-            /*
             // Positional starts from 1: One non-list before and one after list-needle
             array(
                 "SELECT * FROM Foo WHERE foo = ? AND bar IN (?) AND baz = ? AND foo IN (?)",
@@ -576,7 +573,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            */
             /*
             //  Named parameters : Very simple with one needle
             array(
