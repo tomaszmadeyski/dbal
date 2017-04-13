@@ -236,7 +236,7 @@ class SQLParserUtils
                 $queryOffset += (strlen($expandStr) - $paramLen);
                 $query        = substr($query, 0, $pos) . $expandStr . substr($query, ($pos + $paramLen));
             } else {
-                $pattern = sprintf('/\s+\S+\s+IN \(.*%s.*\)/i', $paramName);
+                $pattern = sprintf('/\s+\S+\s+IN \([^\)]*%s[^\(]*\)/i', $paramName);
                 list($query, $queryLenghtGrowth) = self::splitInClause($query, $query, $pattern, $count, $maxInClauseElements);
                 $queryOffset += $queryLenghtGrowth;
             }
