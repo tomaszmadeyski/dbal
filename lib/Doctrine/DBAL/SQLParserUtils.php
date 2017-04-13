@@ -198,7 +198,9 @@ class SQLParserUtils
                         }
                     }
 
-                    list($query, $queryLenghtGrowth) = self::splitInClause($query, $queryOffset, $needlePos, $count, $maxInClauseElements);
+                    $searchSubject = substr($query, $queryOffset, $needlePos - $queryOffset);
+                    $pattern = '/\s+\S+\s+IN \(/i';
+                    list($query, $queryLenghtGrowth) = self::splitInClause($query, $searchSubject, $pattern, $count, $maxInClauseElements);
                     $queryOffset += $queryLenghtGrowth;
                 }
 
@@ -228,16 +230,23 @@ class SQLParserUtils
             }
 
             $count      = count($value);
-            $expandStr  = $count > 0 ? implode(', ', array_fill(0, $count, '?')) : 'NULL';
+            if (null === $maxInClauseElements || $count <= $maxInClauseElements) {
+                $expandStr  = $count > 0 ? implode(', ', array_fill(0, $count, '?')) : 'NULL';
+                $pos         += $queryOffset;
+                $queryOffset += (strlen($expandStr) - $paramLen);
+                $query        = substr($query, 0, $pos) . $expandStr . substr($query, ($pos + $paramLen));
+            } else {
+                $pattern = sprintf('/\s+\S+\s+IN \(.*%s.*\)/i', $paramName);
+                list($query, $queryLenghtGrowth) = self::splitInClause($query, $query, $pattern, $count, $maxInClauseElements);
+                $queryOffset += $queryLenghtGrowth;
+            }
+
 
             foreach ($value as $val) {
                 $paramsOrd[] = $val;
                 $typesOrd[]  = static::extractParam($paramName, $types, false) - Connection::ARRAY_PARAM_OFFSET;
             }
 
-            $pos         += $queryOffset;
-            $queryOffset += (strlen($expandStr) - $paramLen);
-            $query        = substr($query, 0, $pos) . $expandStr . substr($query, ($pos + $paramLen));
         }
 
         return array($query, $paramsOrd, $typesOrd);
@@ -245,18 +254,10 @@ class SQLParserUtils
 
     /**
      * @todo proper doc
-     *
-     * @param $query
-     * @param $queryOffset
-     * @param $needlePos
-     * @param $count
-     * @param $maxInClauseElements
-     * @return array
      */
-    static private function splitInClause($query, $queryOffset, $needlePos, $count, $maxInClauseElements)
+    static private function splitInClause($query, $searchSubject, $pattern, $count, $maxInClauseElements)
     {
-        $searchSubject = substr($query, $queryOffset, $needlePos - $queryOffset);
-        preg_match_all('/\s+\S+\s+IN \(/i', $searchSubject, $matches);
+        preg_match_all($pattern, $searchSubject, $matches);
         $match = array_pop($matches[0]);
 
         $columnSpecification = trim(substr($match, 0, strpos(strtolower($match), ' in')));

@@ -573,7 +573,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            /*
             //  Named parameters : Very simple with one needle
             array(
                 "SELECT * FROM Foo WHERE foo IN (:foo)",
@@ -584,8 +583,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            */
-            /*
             // Named parameters: One non-list before d one after list-needle
             array(
                 "SELECT * FROM Foo WHERE foo = :foo AND bar IN (:bar)",
@@ -596,8 +593,6 @@ SQLDATA
                 array(\PDO::PARAM_STR, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            */
-            /*
             // Named parameters: One non-list after list-needle
             array(
                 "SELECT * FROM Foo WHERE bar IN (:bar) AND baz = :baz",
@@ -608,8 +603,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_STR),
                 2
             ),
-            */
-            /*
             // Named parameters: One non-list before and one after list-needle
             array(
                 "SELECT * FROM Foo WHERE foo = :foo AND bar IN (:bar) AND baz = :baz",
@@ -620,7 +613,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            */
             /*
             // Named parameters: Two lists
             array(
@@ -645,7 +637,6 @@ SQLDATA
                 2
             ),
             */
-            /*
             array(
                 "SELECT * FROM Foo WHERE foo IN (:foo) OR bar = :bar OR baz = :baz",
                 array('foo' => array(1, 2), 'bar' => 'bar', 'baz' => 'baz'),
@@ -655,8 +646,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_STR, 'string'),
                 1
             ),
-            */
-            /*
             array(
                 "SELECT * FROM Foo WHERE foo IN (:foo) OR bar = :bar",
                 array('foo' => array(1, 2), 'bar' => 'bar'),
@@ -666,8 +655,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_STR),
                 1
             ),
-            */
-            /*
             array(
                 "SELECT * FROM Foo WHERE foo IN (:foo) OR bar = :bar",
                 array(':foo' => array(1, 2), ':bar' => 'bar'),
@@ -677,8 +664,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_STR),
                 1
             ),
-            */
-            /*
             array(
                 "SELECT * FROM Foo WHERE foo IN (:foo) OR bar = :bar",
                 array('foo' => array(1, 2), 'bar' => 'bar'),
@@ -688,7 +673,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_STR),
                 1
             ),
-            */
         );
     }
 
