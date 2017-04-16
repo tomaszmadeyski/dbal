@@ -214,6 +214,7 @@ class SQLParserUtils
         $queryOffset = 0;
         $typesOrd    = array();
         $paramsOrd   = array();
+        $paramsExpanded = array();
 
         foreach ($paramPos as $pos => $paramName) {
             $paramLen = strlen($paramName) + 1;
@@ -229,7 +230,47 @@ class SQLParserUtils
                 continue;
             }
 
+            if (in_array($paramName, $paramsExpanded)) {
+                continue;
+            }
+
             $count      = count($value);
+            foreach ($value as $val) {
+                $paramsOrd[] = $val;
+                $typesOrd[]  = static::extractParam($paramName, $types, false) - Connection::ARRAY_PARAM_OFFSET;
+            }
+
+            if (null !== $maxInClauseElements) {
+                //if multiple placeholders exists in the same IN clause we need to merge them into one
+                $inClauseStart = substr($query, $pos);
+                $placeholdersStr = substr($inClauseStart, 0, strpos($inClauseStart, ')'));
+                //@TODO: sprawdzic co jak bedzie pojedynczy item na liscie (bez przecinka)
+                $placeholders = explode(",", $placeholdersStr);
+                $placeholdersCount = count($placeholders);
+                if ($placeholdersCount > 1) {
+                    foreach ($placeholders as $key => $val) {
+                        if ($key == 0) {
+                            continue;
+                        }
+
+                        if (strpos($val, '?') !== false) {
+                            continue;
+                        }
+
+                        $nextParam = trim($val, " :");
+                        $nextValue = self::extractParam($nextParam, $params, true);
+
+                        $count += count($nextValue);
+                        foreach ($nextValue as $nval) {
+                            $paramsOrd[] = $nval;
+                            $typesOrd[]  = static::extractParam($nextParam, $types, false) - Connection::ARRAY_PARAM_OFFSET;
+                        }
+
+                        $paramsExpanded[] = $nextParam;
+                    }
+                }
+            }
+
             if (null === $maxInClauseElements || $count <= $maxInClauseElements) {
                 $expandStr  = $count > 0 ? implode(', ', array_fill(0, $count, '?')) : 'NULL';
                 $pos         += $queryOffset;
@@ -240,13 +281,6 @@ class SQLParserUtils
                 list($query, $queryLenghtGrowth) = self::splitInClause($query, $query, $pattern, $count, $maxInClauseElements);
                 $queryOffset += $queryLenghtGrowth;
             }
-
-
-            foreach ($value as $val) {
-                $paramsOrd[] = $val;
-                $typesOrd[]  = static::extractParam($paramName, $types, false) - Connection::ARRAY_PARAM_OFFSET;
-            }
-
         }
 
         return array($query, $paramsOrd, $typesOrd);

@@ -613,7 +613,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            /*
             // Named parameters: Two lists
             array(
                 "SELECT * FROM Foo WHERE foo IN (:a, :b)",
@@ -624,7 +623,6 @@ SQLDATA
                 array(\PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT, \PDO::PARAM_INT),
                 2
             ),
-            */
             //  Named parameters : With the same name arg
             array(
                 "SELECT * FROM Foo WHERE foo IN (:arg) AND NOT bar IN (:arg)",
